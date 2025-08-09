@@ -4,7 +4,7 @@ namespace App\Message;
 
 class InstagramPostMessage
 {
-    public function __construct(private int $id, private string $title, private string $image_url)
+    public function __construct(private int $id, private string $title, private string $image_filename)
     {
 
     }
@@ -19,8 +19,8 @@ class InstagramPostMessage
         return $this->title;
     }
 
-    public function getImageUrl(): string
+    public function getImageFilename(): string
     {
-        return $this->image_url;
+        return $this->image_filename;
     }
 }

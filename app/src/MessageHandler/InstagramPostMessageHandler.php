@@ -24,8 +24,8 @@ class InstagramPostMessageHandler
 
     public function __invoke(InstagramPostMessage $message)
     {
-        $this->logger->info("Sending post ID: " . $message->getId() . " title:" . $message->getTitle() . " url:" . $message->getImageUrl());
-        // $this->createPost();
+        $this->logger->info("Sending post ID: " . $message->getId() . " title:" . $message->getTitle() . " url:" . $message->getImageFilename());
+        $this->createPost($message->getImageFilename());
     }
 
     private function sendEmailNotification(array $data)
@@ -56,7 +56,7 @@ class InstagramPostMessageHandler
         return $fileNames;
     }
 
-    private function createPost(array $files)
+    private function createPost($image_filename)
     {
         $client = HttpClient::create();
         //https://graph.instagram.com/v23.0/17841474741088400/media
@@ -70,13 +70,14 @@ class InstagramPostMessageHandler
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $_ENV['INSTAGRAM_ACCESS_TOKEN']
         ];
-        $image_url = $_ENV['BACKEND_HOST'] . "/public/images/" . $files[0];
+
+        $image_url = $_ENV['BACKEND_HOST'] . "/public/images/" . $image_filename;
 
         $today = date("Y-m-d");
         $caption = "My comments\n\n #good #nice";
 
         $this->logger->info($container_url);
-        $this->logger->info($files[0]);
+        $this->logger->info($image_url);
 
         $container_json = [
             "caption" => $caption,
@@ -91,7 +92,7 @@ class InstagramPostMessageHandler
         ]);
 
         if ($response->getStatusCode() === Response::HTTP_OK) {
-            $this->logger->info("Created container for: " . $files[0]);
+            $this->logger->info("Created container for: " . $image_filename);
             $data = $response->toArray();
             if (isset($data["id"])) {
                 $media_id = $data["id"];
