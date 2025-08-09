@@ -31,31 +31,16 @@ class InstagramPostMessageHandler
     private function sendEmailNotification(array $data)
     {
         $email = (new TemplatedEmail())
-            ->from(new Address('mailer@scinforma.com', 'Scinforma'))
+            ->from(new Address($_ENV['MAILER_EMAIL'], 'Scinforma'))
             ->to($_ENV['REPORT_RECIPIENT_EMAIL'])
             ->subject('My Instagram Post')
-            ->htmlTemplate('reports/en.instagram_post_email.html.twig')
+            ->htmlTemplate('en.instagram_post_email.html.twig')
             ->context([
                 'data' => $data
             ]);
 
         $this->mailer->send($email);
     }
-
-    public function getTodayFiles(string $directory): array
-    {
-        $today = date("Y-m-d"); // Get today's date in "YYYY-MM-DD" format
-        $finder = new Finder();
-        $finder->files()->in($directory)->name("{$today}*.png");
-
-        $fileNames = [];
-        foreach ($finder as $file) {
-            $fileNames[] = $file->getFilename();
-        }
-
-        return $fileNames;
-    }
-
     private function createPost($image_filename)
     {
         $client = HttpClient::create();
@@ -71,7 +56,7 @@ class InstagramPostMessageHandler
             'Authorization' => 'Bearer ' . $_ENV['INSTAGRAM_ACCESS_TOKEN']
         ];
 
-        $image_url = $_ENV['BACKEND_HOST'] . "/public/images/" . $image_filename;
+        $image_url = $_ENV['REMOTE_HOST'] . "/images/" . $image_filename;
 
         $today = date("Y-m-d");
         $caption = "My comments\n\n #good #nice";
@@ -108,15 +93,15 @@ class InstagramPostMessageHandler
                         "date" => $today,
                         "url" => $image_url
                     ];
-                    // $this->sendEmailNotification($data);
+                    $this->sendEmailNotification($data);
                 } else {
                     $this->logger->error("Could not publish: " . $media_id);
                     throw new Exception("Could not publish: " . $media_id);
                 }
             }
         } else {
-            $this->logger->error("Container creation failed: " . $files[0]);
-            throw new Exception("Container creation failed: " . $files[0]);
+            $this->logger->error("Container creation failed: " . $image_filename);
+            throw new Exception("Container creation failed: " . $image_filename);
         }
     }
 }
