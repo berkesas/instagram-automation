@@ -1,0 +1,11 @@
+{% extends 'email.base.html.twig' %}
+{% block title %}My website Instagram Post{% endblock %}
+{% block body %}
+<h1>My website Instagram Post</h1>
+<p>Today's instagram post was saved successfully: {{ data.date }}</p>
+<p><img src="{{ data.url }}" width="540"></p>
+<p>
+    Best Regards,<br>
+    My Website Team
+</p>
+{% endblock %}

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Queue Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .status {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status.loading {
+            background: #e8f0fe;
+            color: #667eea;
+            border: 1px solid #c5cae9;
+        }
+
+        .status.success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            background: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th {
+            padding: 18px 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 12px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.2s ease;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+            transform: scale(1.01);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        td {
+            padding: 15px;
+            vertical-align: top;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+            font-size: 18px;
+        }
+
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        .auto-refresh-indicator {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 4px 8px;
+            background: #e8f5e8;
+            color: #2e7d32;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .auto-refresh-indicator.active {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .record-count {
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .input-group input {
+                min-width: auto;
+            }
+
+            .header h1 {
+                font-size: 1em;
+            }
+
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+
+            .controls, .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Message Queue Viewer</h1>
+            <p>Fetch messages in the queueu</p>
+        </div>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="endpoint">API Endpoint:</label>
+                <input 
+                    type="url" 
+                    id="endpoint" 
+                    placeholder="http://127.0.0.1:8000/messages"
+                    value="http://127.0.0.1:8000/messages"
+                >
+                <label for="refreshInterval">Auto-refresh (seconds):</label>
+                <input 
+                    type="number" 
+                    id="refreshInterval" 
+                    placeholder="10"
+                    value="10"
+                    min="1"
+                    max="3600"
+                    style="min-width: 120px; flex: none;"
+                >
+                <button class="btn" id="fetchBtn" onclick="fetchData()">Fetch Data</button>
+                <button class="btn" id="toggleBtn" onclick="toggleAutoRefresh()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">Start Auto</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="status" class="status" style="display: none;"></div>
+            <div id="recordCount" class="record-count" style="display: none;">
+                <span id="recordText"></span>
+                <span id="autoRefreshIndicator" class="auto-refresh-indicator" style="display: none;">Auto-refresh OFF</span>
+            </div>
+            <div id="tableContainer" class="table-container">
+                <div class="no-data">
+                    <i>📋</i>
+                    <p>Enter an API endpoint above and click "Fetch Data" to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        var currentData = [];
+        var autoRefreshInterval = null;
+        var isAutoRefreshing = false;
+        var nextRefreshTimeout = null;
+
+        // Status management functions
+        function showStatus(message, type) {
+            var statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+            statusEl.style.display = 'block';
+        }
+
+        function hideStatus() {
+            document.getElementById('status').style.display = 'none';
+        }
+
+        function showRecordCount(count) {
+            var countEl = document.getElementById('recordCount');
+            var textEl = document.getElementById('recordText');
+            textEl.textContent = 'Showing ' + count + ' record' + (count !== 1 ? 's' : '');
+            countEl.style.display = 'block';
+        }
+
+        function hideRecordCount() {
+            // document.getElementById('recordCount').style.display = 'none';
+        }
+
+        // Auto-refresh UI indicator function
+        function updateAutoRefreshIndicator() {
+            var indicator = document.getElementById('autoRefreshIndicator');
+            var toggleBtn = document.getElementById('toggleBtn');
+            
+            if (isAutoRefreshing) {
+                var interval = document.getElementById('refreshInterval').value;
+                indicator.textContent = 'Auto-refresh ON (' + interval + 's)';
+                indicator.className = 'auto-refresh-indicator active';
+                indicator.style.display = 'inline-block';
+                toggleBtn.textContent = 'Stop Auto';
+                toggleBtn.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+            } else {
+                indicator.textContent = 'Auto-refresh OFF';
+                indicator.className = 'auto-refresh-indicator';
+                indicator.style.display = 'inline-block';
+                toggleBtn.textContent = 'Start Auto';
+                toggleBtn.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+            }
+        }
+
+        // THE MAIN TOGGLE FUNCTION - this was missing!
+        function toggleAutoRefresh() {
+            if (isAutoRefreshing) {
+                stopAutoRefresh();
+            } else {
+                startAutoRefresh();
+            }
+        }
+
+        // Auto-refresh control functions
+        function startAutoRefresh() {
+            var interval = parseInt(document.getElementById('refreshInterval').value);
+            if (isNaN(interval) || interval < 1) {
+                showStatus('Please enter a valid refresh interval (1-3600 seconds)', 'error');
+                return;
+            }
+
+            isAutoRefreshing = true;
+            updateAutoRefreshIndicator();
+            
+            // Fetch data immediately when starting
+            fetchData();
+            
+            // Set up interval for future fetches
+            autoRefreshInterval = setInterval(function() {
+                fetchData();
+            }, interval * 1000);
+        }
+
+        function stopAutoRefresh() {
+            isAutoRefreshing = false;
+            updateAutoRefreshIndicator();
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            if (nextRefreshTimeout) {
+                clearTimeout(nextRefreshTimeout);
+                nextRefreshTimeout = null;
+            }
+        }
+
+        // Table creation function
+        function createTable(data) {
+            if (!data || data.length === 0) {
+                return '<div class="no-data"><i>📭</i><p>No data found</p></div>';
+            }
+
+            // Get all unique keys from all objects
+            var allKeys = [];
+            var keySet = {};
+            for (var i = 0; i < data.length; i++) {
+                var keys = Object.keys(data[i]);
+                for (var j = 0; j < keys.length; j++) {
+                    if (!keySet[keys[j]]) {
+                        keySet[keys[j]] = true;
+                        allKeys.push(keys[j]);
+                    }
+                }
+            }
+            
+            var html = '<table><thead><tr>';
+            
+            // Create header
+            for (var k = 0; k < allKeys.length; k++) {
+                var key = allKeys[k];
+                var headerText = key.replace(/([A-Z])/g, ' $1').replace(/^./, function(str) { return str.toUpperCase(); });
+                html += '<th>' + headerText + '</th>';
+            }
+            html += '</tr></thead><tbody>';
+            
+            // Create rows
+            for (var row = 0; row < data.length; row++) {
+                var item = data[row];
+                html += '<tr>';
+                for (var col = 0; col < allKeys.length; col++) {
+                    var key = allKeys[col];
+                    var value = item[key];
+                    
+                    // Handle different data types
+                    if (value === null || value === undefined) {
+                        value = '<em style="color: #6c757d;">null</em>';
+                    } else if (typeof value === 'object') {
+                        value = '<code style="background: #f8f9fa; padding: 2px 4px; border-radius: 3px; font-size: 12px;">' + JSON.stringify(value) + '</code>';
+                    } else if (typeof value === 'boolean') {
+                        var color = value ? '#28a745' : '#dc3545';
+                        value = '<span style="color: ' + color + '; font-weight: bold;">' + value + '</span>';
+                    } else if (typeof value === 'string' && value.match(/^https?:\/\//)) {
+                        var displayText = value.length > 50 ? value.substring(0, 47) + '...' : value;
+                        value = '<a href="' + value + '" target="_blank" style="color: #007bff; text-decoration: none;">' + displayText + '</a>';
+                    }
+                    
+                    html += '<td>' + value + '</td>';
+                }
+                html += '</tr>';
+            }
+            
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // Main data fetching function using AJAX
+        function fetchData() {
+            var endpoint = document.getElementById('endpoint').value.trim();
+            var tableContainer = document.getElementById('tableContainer');
+            
+            if (!endpoint) {
+                showStatus('Please enter an API endpoint', 'error');
+                return;
+            }
+
+            try {
+                var timestamp = new Date().toLocaleTimeString();
+                showStatus('Fetching data... (' + timestamp + ')', 'loading');
+                
+                // Show loading spinner only if table is empty
+                if (tableContainer.innerHTML.indexOf('no-data') !== -1 || tableContainer.innerHTML.indexOf('Failed to load') !== -1) {
+                    tableContainer.innerHTML = '<div class="spinner"></div>';
+                }
+
+                // Create XMLHttpRequest instead of fetch
+                var xhr = new XMLHttpRequest();
+                
+                xhr.open('GET', endpoint, true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                currentData = Array.isArray(data) ? data : [data];
+                                
+                                // Update table
+                                tableContainer.innerHTML = createTable(currentData);
+                                
+                                showStatus('Successfully fetched ' + currentData.length + ' record' + (currentData.length !== 1 ? 's' : '') + ' at ' + timestamp, 'success');
+                                showRecordCount(currentData.length);
+                                updateAutoRefreshIndicator();
+                                
+                                // Hide status after 3 seconds
+                                // setTimeout(hideStatus, 3000);
+                                
+                            } catch (parseError) {
+                                console.error('Error parsing JSON:', parseError);
+                                showStatus('Error: Invalid JSON response', 'error');
+                                tableContainer.innerHTML = '<div class="no-data"><i>⚠️</i><p>Failed to parse response</p></div>';
+                                hideRecordCount();
+                                
+                                // Stop auto-refresh on error
+                                if (isAutoRefreshing) {
+                                    stopAutoRefresh();
+                                    showStatus('Auto-refresh stopped due to parse error', 'error');
+                                }
+                            }
+                        } else {
+                            var error = 'HTTP error! status: ' + xhr.status;
+                            console.error('Error fetching data:', error);
+                            showStatus('Error: ' + error, 'error');
+                            tableContainer.innerHTML = '<div class="no-data"><i>⚠️</i><p>Failed to load data</p></div>';
+                            hideRecordCount();
+                            
+                            // Stop auto-refresh on error
+                            if (isAutoRefreshing) {
+                                stopAutoRefresh();
+                                showStatus('Auto-refresh stopped due to error: ' + error, 'error');
+                            }
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    var error = 'Network error occurred';
+                    console.error('Network error:', error);
+                    showStatus('Error: ' + error, 'error');
+                    tableContainer.innerHTML = '<div class="no-data"><i>⚠️</i><p>Network error</p></div>';
+                    hideRecordCount();
+                    
+                    // Stop auto-refresh on error
+                    if (isAutoRefreshing) {
+                        stopAutoRefresh();
+                        showStatus('Auto-refresh stopped due to network error', 'error');
+                    }
+                };
+                
+                xhr.send();
+                
+            } catch (error) {
+                console.error('Error setting up request:', error);
+                showStatus('Error: ' + error.message, 'error');
+                tableContainer.innerHTML = '<div class="no-data"><i>⚠️</i><p>Failed to setup request</p></div>';
+                hideRecordCount();
+                
+                // Stop auto-refresh on error
+                if (isAutoRefreshing) {
+                    stopAutoRefresh();
+                    showStatus('Auto-refresh stopped due to error: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Allow Enter key to trigger fetch
+            document.getElementById('endpoint').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' || e.keyCode === 13) {
+                    fetchData();
+                }
+            });
+
+            // Update auto-refresh when interval changes
+            document.getElementById('refreshInterval').addEventListener('change', function() {
+                if (isAutoRefreshing) {
+                    stopAutoRefresh();
+                    startAutoRefresh();
+                }
+            });
+
+            // Initialize the page
+            updateAutoRefreshIndicator();
+        });
+
+        // Clean up intervals when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
