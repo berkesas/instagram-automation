@@ -443,6 +443,9 @@
                     } else if (typeof value === 'string' && value.match(/^https?:\/\//)) {
                         var displayText = value.length > 50 ? value.substring(0, 47) + '...' : value;
                         value = '<a href="' + value + '" target="_blank" style="color: #007bff; text-decoration: none;">' + displayText + '</a>';
+                    } else if (typeof value === 'string' && value.startsWith("post_")) {
+                        var displayText = value.length > 50 ? value.substring(0, 47) + '...' : value;
+                        value = '<img src="http://127.0.0.1:8000/images/' + value + '" height=100>';
                     }
                     
                     html += '<td>' + value + '</td>';

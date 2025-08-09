@@ -7,3 +7,11 @@ To bring these concepts to life, we'll walk through a practical example — auto
 # Backend in Symfony
 
 In this demo the Symfony backend uses `logger`, `mailer`, `messenger`, `twig`, `doctrine`, `orm` packages.
+
+# Useful cron commands
+
+>crontab -e #edit cron job
+>timedatectl status #see local timezone
+
+20 10 * * * cd /home/myuser/myapp.com && php bin/console app:instagram-post
+30 10 * * * cd /home/myuser/myapp.com && php bin/console messenger:consume instagram --time-limit=60
